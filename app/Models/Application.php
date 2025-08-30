@@ -4,33 +4,49 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Storage;
-
+use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\Activitylog\LogOptions;
 class Application extends Model
 {
+    use LogsActivity;
     protected $guarded = [];
 
+    protected $appends = ['logo_url', 'thumb_url'];
+    protected $hidden  = ['logo_path', 'thumb_path'];
+    protected $casts   = [
+        'service_id' => 'integer',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
+    ];
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->useLogName('application')
+            ->logOnly(['nom','description','statut','service_id','logo_path','thumb_path'])
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs()
+            ->setDescriptionForEvent(fn($e) => "Application {$this->nom} {$e}");
+    }
+    /* ==================== Relations ===================== */
     public function service()
     {
         return $this->belongsTo(\App\Models\Service::class);
     }
 
-    // URL publique du logo (ou placeholder)
     public function getLogoUrlAttribute(): string
     {
-        if ($this->logo_path && Storage::disk('public')->exists($this->logo_path)) {
+        if ($this->logo_path) {
             return Storage::url($this->logo_path);
         }
-        // placeholder simple
         return 'https://ui-avatars.com/api/?name=' . urlencode($this->nom) . '&size=128&background=EEF2FF&color=334155';
     }
 
-    // URL publique de la miniature
     public function getThumbUrlAttribute(): string
     {
-        if ($this->thumb_path && Storage::disk('public')->exists($this->thumb_path)) {
+        if ($this->thumb_path) {
             return Storage::url($this->thumb_path);
         }
-        // fallback sur le logo principal
         return $this->logo_url;
     }
 }

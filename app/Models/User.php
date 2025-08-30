@@ -2,22 +2,18 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Spatie\Permission\Traits\HasRoles;  // Assuming you are using Spatie's Permission package for roles and permissions
+use Spatie\Permission\Traits\HasRoles;
+use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\Activitylog\LogOptions;
+use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable, HasRoles;
+    use HasFactory, Notifiable, HasRoles, LogsActivity, HasApiTokens;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
     protected $fillable = [
         'name',
         'title',
@@ -25,21 +21,11 @@ class User extends Authenticatable
         'password',
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
-     */
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
     protected function casts(): array
     {
         return [
@@ -48,9 +34,7 @@ class User extends Authenticatable
         ];
     }
 
-    /**
-     * Relation vers les incidents créés par l'utilisateur.
-     */
+    // Relations
     public function commentaires()
     {
         return $this->hasMany(Commentaire::class);
@@ -61,19 +45,26 @@ class User extends Authenticatable
         return $this->hasMany(Incident::class, 'user_id');
     }
 
-    /**
-     * Relation vers le service de l'utilisateur.
-     */
     public function service()
     {
         return $this->belongsTo(Service::class);
-    // Assuming the User model has a service_id foreign key
     }
 
-    // Avatar UI-Avatars (https://ui-avatars.com)
+    // Avatar via UI-Avatars
     public function getAvatarUrlAttribute(): string
     {
         $name = urlencode($this->name ?? 'U');
         return "https://ui-avatars.com/api/?name={$name}&size=96&background=4f46e5&color=ffffff&format=png";
+    }
+
+    // Spatie Activitylog
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->useLogName('user')
+            ->logOnly(['name','email','title','service_id'])
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs()
+            ->setDescriptionForEvent(fn(string $eventName) => "Utilisateur {$this->name} {$eventName}");
     }
 }

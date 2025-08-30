@@ -59,100 +59,132 @@
   </div>
 </div>
 
+{{-- Graphes côte à côte --}}
 <div class="row">
-  {{-- Graphe par technicien (compact) --}}
+  {{-- Incidents par technicien --}}
   <div class="col-md-6">
     <div class="card card-compact">
-      <div class="card-header py-2"><h3 class="card-title mb-0">Incidents par technicien (ouverts)</h3></div>
+      <div class="card-header py-2">
+        <h3 class="card-title mb-0">Incidents par technicien (ouverts)</h3>
+      </div>
       <div class="card-body">
-        <canvas id="chartByTech" class="chart-xs"></canvas>
+        @if(!empty($techLabels) && collect($techLabels)->filter()->count() > 0)
+          <canvas id="chartByTech" class="chart-xs"></canvas>
+        @else
+          <div class="text-muted small">Aucune donnée à afficher pour le moment.</div>
+        @endif
       </div>
     </div>
   </div>
-   <div class="row">
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header"><h3 class="card-title">Temps moyen de prise en charge (h) — 30j</h3></div>
-                <div class="card-body">
-                    <canvas id="chartAvgPickup" height="160"></canvas>
-                </div>
-            </div>
-        </div>
-    </div>
-  {{-- SLA à risque --}}
+
+  {{-- Temps moyen de prise en charge --}}
   <div class="col-md-6">
     <div class="card card-compact">
-      <div class="card-header py-2"><h3 class="card-title mb-0">SLA à risque (Top 10)</h3></div>
-      <div class="card-body p-0">
-        <table class="table table-striped table-sm mb-0">
-          <thead class="thead-light">
-            <tr>
-              <th style="width:105px">Code</th>
-              <th>Appli</th>
-              <th>Technicien</th>
-              <th style="width:120px">Échéance</th>
-              <th class="text-right" style="width:92px">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            @forelse($slaList as $it)
-            <tr>
-              <td class="text-monospace">{{ $it->code }}</td>
-              <td class="text-truncate" title="{{ optional($it->application)->nom }}">
-                {{ optional($it->application)->nom }}
-              </td>
-              <td>{{ optional($it->technicien)->name ?? 'Non assigné' }}</td>
-              <td>{{ $it->due_at ? $it->due_at->diffForHumans() : '—' }}</td>
-              <td class="text-right pr-2">
-                <a href="{{ route('incidents.show',$it) }}" class="btn btn-xs btn-outline-primary" title="Voir">
-                  <i class="fas fa-eye"></i>
-                </a>
-                @can('update incidents')
-                <a href="{{ route('incidents.edit',$it) }}" class="btn btn-xs btn-outline-warning" title="Réassigner / Éditer">
-                  <i class="fas fa-user-edit"></i>
-                </a>
-                @endcan
-              </td>
-            </tr>
-            @empty
-            <tr><td colspan="5" class="text-center text-muted py-3">Aucun incident à risque.</td></tr>
-            @endforelse
-          </tbody>
-        </table>
+      <div class="card-header py-2">
+        <h3 class="card-title mb-0">Temps moyen de prise en charge (h) — 30j</h3>
+      </div>
+      <div class="card-body">
+        @if(!empty($avgTechLabels) && collect($avgTechLabels)->filter()->count() > 0)
+          <canvas id="chartAvgPickup" class="chart-xs"></canvas>
+        @else
+          <div class="text-muted small">Aucune donnée à afficher pour le moment.</div>
+        @endif
       </div>
     </div>
   </div>
 </div>
+
+{{-- SLA à risque --}}
+<div class="row">
+  <div class="col-12">
+    <div class="card card-compact">
+      <div class="card-header py-2">
+        <h3 class="card-title mb-0">SLA à risque (Top 10)</h3>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-striped table-sm mb-0 sla-table">
+            <thead class="thead-light">
+              <tr>
+                <th class="col-code">Code</th>
+                <th>Appli</th>
+                <th class="col-tech">Technicien</th>
+                <th class="col-due">Échéance</th>
+                <th class="text-right col-actions">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              @forelse($slaList as $it)
+                <tr>
+                  <td class="text-monospace nowrap">{{ $it->code }}</td>
+                  <td class="text-truncate" title="{{ optional($it->application)->nom }}">
+                    {{ optional($it->application)->nom }}
+                  </td>
+                  <td class="text-truncate">{{ optional($it->technicien)->name ?? 'Non assigné' }}</td>
+                  <td class="nowrap">{{ $it->due_at ? $it->due_at->diffForHumans() : '—' }}</td>
+                  <td class="text-right pr-2">
+                    <a href="{{ route('incidents.show',$it) }}" class="btn btn-xs btn-outline-primary" title="Voir">
+                      <i class="fas fa-eye"></i>
+                    </a>
+                    @can('incidents.update.any')
+                      <a href="{{ route('incidents.edit',$it) }}" class="btn btn-xs btn-outline-warning" title="Réassigner / Éditer">
+                        <i class="fas fa-user-edit"></i>
+                      </a>
+                    @endcan
+                  </td>
+                </tr>
+              @empty
+                <tr><td colspan="5" class="text-center text-muted py-3">Aucun incident à risque.</td></tr>
+              @endforelse
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    </div>
+</div>
+
 @endsection
 
 @push('css')
 <style>
-  .card.card-compact .card-body{ padding:.75rem 1rem; }
-  .chart-xs{ height:220px !important; }
-  .text-monospace{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
-  .table td, .table th{ vertical-align: middle; }
+    card.card-compact .card-body{ padding:.75rem 1rem; }
+    .chart-xs{ height:240px !important; }              /* Hauteur explicite des canvases */
+    .text-monospace{
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace;
+    }
+    .nowrap{ white-space: nowrap; }                    /* Pas de retour à la ligne */
+    .sla-table .col-code{ width:112px; }              /* Code compact & stable */
+    .sla-table .col-tech{ width:220px; }              /* Place pour nom complet */
+    .sla-table .col-due{ width:120px; }               /* Échéance */
+    .sla-table .col-actions{ width:90px; }            /* Deux icônes */
+    .table td, .table th{ vertical-align:middle;}
 </style>
 @endpush
 
 @section('js')
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script>
-    if (window.Chart) {
-      Chart.defaults.font.size = 11;
-      Chart.defaults.plugins.legend.display = false;
-      Chart.defaults.maintainAspectRatio = false;
-    }
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  if (window.Chart) {
+    Chart.defaults.font.size = 11;
+    Chart.defaults.plugins.legend.display = false;
+    Chart.defaults.maintainAspectRatio = false;
+  }
 
-    const TECH_LABELS = @json($techLabels);
-    const TECH_DATA   = @json($techCounts);
+  // Incidents par technicien
+  (function(){
+    const labels = @json($techLabels ?? []);
+    const data   = @json($techCounts ?? []);
+    const el = document.getElementById('chartByTech');
+    if (!el || !labels.length) return;
 
-    new Chart(document.getElementById('chartByTech'), {
+    new Chart(el.getContext('2d'), {
       type: 'bar',
       data: {
-        labels: TECH_LABELS,
+        labels,
         datasets: [{
           label: 'Incidents ouverts',
-          data: TECH_DATA,
+          data,
           backgroundColor: 'rgba(0,123,255,.75)',
           borderColor: '#007bff',
           borderWidth: 1,
@@ -167,40 +199,34 @@
         }
       }
     });
-  </script>
-  <script>
-  const AVG_TECH_LABELS = @json($avgTechLabels ?? []);
-  const AVG_TECH_HOURS  = @json($avgTechHours ?? []);
+  })();
 
-  if (document.getElementById('chartAvgPickup')) {
-    const ctxAP = document.getElementById('chartAvgPickup').getContext('2d');
-    new Chart(ctxAP, {
+  // Temps moyen de prise en charge
+  (function(){
+    const labels = @json($avgTechLabels ?? []);
+    const data   = @json($avgTechHours ?? []);
+    const el = document.getElementById('chartAvgPickup');
+    if (!el || !labels.length) return;
+
+    new Chart(el.getContext('2d'), {
       type: 'bar',
       data: {
-        labels: AVG_TECH_LABELS,
+        labels,
         datasets: [{
           label: 'Heures (moyenne)',
-          data: AVG_TECH_HOURS,
-          backgroundColor: '#6610f2', // violet
+          data,
+          backgroundColor: '#6610f2',
           borderWidth: 1
         }]
       },
       options: {
-        responsive: true,
         plugins: {
           legend: { display: false },
-          tooltip: {
-            callbacks: {
-              label: (ctx) => ${ctx.parsed.y} h
-            }
-          }
+          tooltip: { callbacks: { label: (ctx) => ${ctx.parsed.y} h } }
         },
-        scales: {
-          y: { beginAtZero: true }
-        }
+        scales: { y: { beginAtZero: true } }
       }
     });
-  }
+  })();
 </script>
-
 @endsection

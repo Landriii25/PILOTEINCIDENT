@@ -4,102 +4,106 @@ namespace App\Http\Controllers;
 
 use App\Models\KbCategory;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
-use Illuminate\Validation\Rule;
 
 class KbCategoryController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('can:kb.view')->only(['index']);
-        $this->middleware('can:kb.categories.manage')->only(['create','store','edit','update','destroy']);
+        // Politiques d’accès (tu peux les ajuster selon tes rôles)
+        $this->middleware('can:kb.categories.manage')->except(['index','show']);
     }
 
+    /**
+     * Liste des catégories
+     */
     public function index()
     {
         $categories = KbCategory::withCount('articles')
             ->orderBy('position')
-            ->orderBy('nom')
-            ->paginate(12);
+            ->get();
 
-        return view('kb.categories', compact('categories'));
+        return view('kb.categories.index', compact('categories'));
     }
 
+    /**
+     * Formulaire de création
+     */
     public function create()
     {
-        return view('kb.categories.create', [
-            'category' => new KbCategory(['position' => 0]),
-        ]);
+        return view('kb.categories.create');
     }
 
-    public function store(Request $r)
+    /**
+     * Enregistrement d’une nouvelle catégorie
+     */
+    public function store(Request $request)
     {
-        $data = $r->validate([
+        $data = $request->validate([
             'nom'         => ['required','string','max:255'],
-            'slug'        => ['nullable','string','max:255','unique:kb_categories,slug'],
-            'description' => ['nullable','string','max:2000'],
-            'position'    => ['nullable','integer','min:0'],
+            'description' => ['nullable','string'],
+            'position'    => ['nullable','integer'],
         ]);
-
-        if (empty($data['slug'])) {
-            $baseSlug = Str::slug($data['nom']);
-            $slug = $baseSlug;
-            $i = 1;
-            while (KbCategory::where('slug',$slug)->exists()) {
-                $slug = $baseSlug.'-'.$i++;
-            }
-            $data['slug'] = $slug;
-        }
-
-        $data['position'] = $data['position'] ?? 0;
 
         KbCategory::create($data);
 
-        return redirect()->route('kb.categories')->with('success','Catégorie créée.');
+        return redirect()->route('kb.categories')
+            ->with('success','Catégorie créée avec succès.');
     }
 
+    /**
+     * Afficher les articles d’une catégorie
+     */
+    public function show(KbCategory $kbCategory)
+    {
+        $articles = $kbCategory->articles()
+            ->latest()
+            ->paginate(10);
+
+        return view('kb.categories.show', [
+            'category' => $kbCategory,
+            'articles' => $articles,
+        ]);
+    }
+
+    /**
+     * Formulaire d’édition
+     */
     public function edit(KbCategory $kbCategory)
     {
-        return view('kb.categories.edit', ['category'=>$kbCategory]);
+        return view('kb.categories.edit', ['category' => $kbCategory]);
     }
 
-    public function update(Request $r, KbCategory $kbCategory)
+    /**
+     * Mise à jour
+     */
+    public function update(Request $request, KbCategory $kbCategory)
     {
-        $data = $r->validate([
+        $data = $request->validate([
             'nom'         => ['required','string','max:255'],
-            'slug'        => [
-                'nullable','string','max:255',
-                Rule::unique('kb_categories','slug')->ignore($kbCategory->id),
-            ],
-            'description' => ['nullable','string','max:2000'],
-            'position'    => ['nullable','integer','min:0'],
+            'description' => ['nullable','string'],
+            'position'    => ['nullable','integer'],
         ]);
-
-        if (empty($data['slug'])) {
-            $baseSlug = Str::slug($data['nom']);
-            $slug = $baseSlug;
-            $i = 1;
-            while (KbCategory::where('slug',$slug)->where('id','!=',$kbCategory->id)->exists()) {
-                $slug = $baseSlug.'-'.$i++;
-            }
-            $data['slug'] = $slug;
-        }
-
-        $data['position'] = $data['position'] ?? 0;
 
         $kbCategory->update($data);
 
-        return redirect()->route('kb.categories')->with('success','Catégorie mise à jour.');
+        return redirect()->route('kb.categories')
+            ->with('success','Catégorie mise à jour.');
     }
 
+    /**
+     * Suppression
+     */
     public function destroy(KbCategory $kbCategory)
     {
-        // (Option) empêcher la suppression si articles > 0
-        // if ($kbCategory->articles()->exists()) {
-        //    return back()->with('error','Catégorie non vide.');
-        // }
+        // ⚠ Tu peux choisir ici de supprimer aussi les articles associés
+        // ou bloquer la suppression si articles existants
+        if ($kbCategory->articles()->exists()) {
+            return back()->with('error','Impossible de supprimer : la catégorie contient encore des articles.');
+        }
 
         $kbCategory->delete();
-        return redirect()->route('kb.categories')->with('success','Catégorie supprimée.');
+
+        return redirect()->route('kb.categories')
+            ->with('success','Catégorie supprimée.');
     }
 }

@@ -1,95 +1,50 @@
 @extends('adminlte::page')
 
-@section('title', $article->title . ' — Base de connaissances')
+@section('title', 'Catégorie : '.$category->nom)
 
 @section('content_header')
-    <div class="d-flex justify-content-between align-items-center">
-        <h1 class="mb-0">{{ $article->title }}</h1>
-        <div>
-            @can('kb.update', $article)
-                <a href="{{ route('kb.edit', $article) }}" class="btn btn-warning">
-                    <i class="fas fa-edit"></i> Éditer
-                </a>
-            @endcan
-            <a href="{{ route('kb.index') }}" class="btn btn-secondary">
-                <i class="fas fa-arrow-left"></i> Retour
-            </a>
-        </div>
-    </div>
-@stop
+  <div class="d-flex justify-content-between align-items-center">
+    <h1 class="m-0">
+      Catégorie : {{ $category->nom }}
+      @if($category->description)
+        <small class="text-muted d-block mt-1">{{ $category->description }}</small>
+      @endif
+    </h1>
+
+    @can('kb.create')
+      <a href="{{ route('kb.create', ['category_id' => $category->id]) }}" class="btn btn-primary">
+        <i class="fas fa-plus mr-1"></i> Nouvel article
+      </a>
+    @endcan
+  </div>
+@endsection
 
 @section('content')
-<div class="row">
-    <div class="col-lg-9">
-        <div class="card">
-            <div class="card-body">
-                <div class="mb-3">
-                    @if($article->is_published)
-                        <span class="badge badge-success">Publié</span>
-                    @else
-                        <span class="badge badge-secondary">Brouillon</span>
-                    @endif
-
-                    <span class="ml-2 text-muted">
-                        Catégorie :
-                        <strong>{{ optional($article->category)->nom ?? '—' }}</strong>
-                    </span>
-
-                    <span class="ml-3 text-muted">
-                        Vues : <strong>{{ $article->views }}</strong>
-                    </span>
-                </div>
-
-                @if($article->summary)
-                    <p class="lead">{{ $article->summary }}</p>
-                    <hr>
-                @endif
-
-                {{-- Contenu : si c'est HTML, il s'affiche ; sinon on fallback en texte --}}
-                @php
-                    $isHtml = $article->content && $article->content !== strip_tags($article->content);
-                @endphp
-
-                <div class="kb-content">
-                    @if($isHtml)
-                        {!! $article->content !!}
-                    @else
-                        {!! nl2br(e($article->content)) !!}
-                    @endif
-                </div>
-
-                @if(!empty($article->tags))
-                    @php
-                        $tags = is_array($article->tags) ? $article->tags : (json_decode($article->tags, true) ?: []);
-                    @endphp
-                    @if(count($tags))
-                        <hr>
-                        <div>
-                            <i class="fas fa-tags text-muted mr-2"></i>
-                            @foreach($tags as $t)
-                                <span class="badge badge-pill badge-light border">{{ $t }}</span>
-                            @endforeach
-                        </div>
-                    @endif
-                @endif
-            </div>
-        </div>
+  @if($articles->isEmpty())
+    <div class="text-center text-muted py-5">
+      <i class="far fa-file-alt fa-2x mb-3"></i>
+      <div>Aucun article dans cette catégorie.</div>
     </div>
-
-    <div class="col-lg-3">
-        <div class="card">
-            <div class="card-header"><strong>Métadonnées</strong></div>
-            <div class="card-body">
-                <div class="text-muted small">Créé le</div>
-                <div class="mb-2">{{ optional($article->created_at)->format('d/m/Y H:i') }}</div>
-
-                <div class="text-muted small">Mis à jour</div>
-                <div class="mb-2">{{ optional($article->updated_at)->format('d/m/Y H:i') }}</div>
-
-                <div class="text-muted small">Slug</div>
-                <div class="mb-2"><code>{{ $article->slug }}</code></div>
+  @else
+    <div class="card">
+      <div class="list-group list-group-flush">
+        @foreach($articles as $a)
+          <a href="{{ route('kb.show', $a) }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+            <div>
+              <div class="font-weight-bold">{{ $a->title }}</div>
+              <div class="small text-muted">
+                Publié {{ $a->created_at?->diffForHumans() }} •
+                @if($a->views) {{ $a->views }} vue(s) @else 0 vue @endif
+              </div>
             </div>
-        </div>
+            <i class="fas fa-chevron-right text-muted"></i>
+          </a>
+        @endforeach
+      </div>
+
+      <div class="card-footer">
+        {{ $articles->links('pagination::bootstrap-4') }}
+      </div>
     </div>
-</div>
-@stop
+  @endif
+@endsection

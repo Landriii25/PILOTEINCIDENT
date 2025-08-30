@@ -4,10 +4,14 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\Activitylog\LogOptions;
+
+
 
 class Incident extends Model
 {
-    use HasFactory;
+    use HasFactory, LogsActivity;
 
     protected $guarded = [];
 
@@ -138,5 +142,20 @@ class Incident extends Model
     {
         if (!$this->due_at) return null;
         return $this->due_at->diffForHumans(null, true, true);
+    }
+
+      public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->useLogName('incident')
+            ->logOnly([
+                'code', 'titre', 'description', 'priorite', 'statut',
+                'application_id', 'service_id', 'user_id', 'technicien_id',
+                'due_at', 'resolved_at'
+            ])
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs()
+            ->setDescriptionForEvent(fn(string $eventName) => "Incident {$this->code} {$eventName}");
+
     }
 }

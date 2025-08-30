@@ -1,0 +1,33 @@
+/* --- Scroll horizontal générique pour toutes les tables --- */
+
+/* Si une table déborde, ne casse pas les mots */
+.table-nowrap thead th,
+.table-nowrap tbody td {
+  white-space: nowrap;
+}
+
+/* Utilitaire à appliquer sur une cellule (ex: code incident) */
+.nowrap { white-space: nowrap !important; }
+
+/* Empêche les <a> de se couper */
+.nowrap a { white-space: nowrap !important; }
+
+/* Pour les badges du code incident */
+.badge-code {
+  display: inline-block;
+  white-space: nowrap;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  letter-spacing: .3px;
+}
+
+
+/* --- Fin du scroll horizontal générique pour toutes les tables --- */
+
+/* Scroll horizontal au besoin sur tous les tableaux responsives */
+.table-responsive { overflow-x: auto; }
+
+/* Garde la 1ère colonne (code) sur une seule ligne dans les listes d’incidents */
+table.incidents-list td:first-child,
+table.incidents-list th:first-child {
+    white-space: nowrap;
+}

@@ -1,58 +1,33 @@
 @extends('adminlte::page')
 
-@section('title','Modifier rôle')
+@section('title','Éditer rôle')
 
 @section('content_header')
-    <h1>Modifier : {{ $role->name }}</h1>
-@stop
+  <div class="d-flex justify-content-between align-items-center">
+    <h1 class="mb-0">Éditer le rôle : {{ $role->name }}</h1>
+    <a href="{{ route('roles.index') }}" class="btn btn-secondary">
+      <i class="fas fa-arrow-left mr-1"></i> Retour
+    </a>
+  </div>
+@endsection
 
 @section('content')
-<x-can perm="roles.manage">
-<div class="card">
-    <form action="{{ route('roles.update',$role) }}" method="POST">
-        @csrf
-        @method('PUT')
+  @if($errors->any())
+    <div class="alert alert-danger">
+      <strong>Erreurs :</strong>
+      <ul class="mb-0">
+        @foreach($errors->all() as $e) <li>{{ $e }}</li> @endforeach
+      </ul>
+    </div>
+  @endif
 
-        <div class="card-body">
-            <div class="form-group">
-                <label>Nom du rôle</label>
-                <input type="text" name="name" class="form-control" required value="{{ old('name',$role->name) }}">
-            </div>
-
-            <div class="form-group">
-                <label>Permissions</label>
-                <div class="row">
-                    @php $cur = $role->permissions->pluck('name')->toArray(); @endphp
-                    @foreach($permissions as $perm)
-                        <div class="col-md-4 mb-1">
-                            <label class="mb-0">
-                                <input type="checkbox" name="permissions[]" value="{{ $perm->name }}" @checked(in_array($perm->name,$cur))>
-                                <span class="text-monospace">{{ $perm->name }}</span>
-                            </label>
-                        </div>
-                    @endforeach
-                </div>
-            </div>
-        </div>
-
-        <div class="card-footer">
-            <x-action.post :action="route('roles.update',$role)" method="PUT" text="Mettre à jour" class="btn-success" icon="fas fa-save" />
-            <a href="{{ route('roles.index') }}" class="btn btn-default">Annuler</a>
-        </div>
-    </form>
-</div>
-</x-can>
-@cannot('roles.manage')
-    <div class="alert alert-warning">Accès non autorisé.</div>
-@endcannot
-@stop
-@section('css')
-    <style>
-        .form-control {
-            width: 100%;
-        }
-        .form-group label {
-            font-weight: bold;
-        }
-    </style>
-@stop
+  <div class="card">
+    <div class="card-body">
+      @include('roles._form', [
+        'role'=>$role,
+        'permissions'=>$permissions,
+        'rolePermissions'=>$rolePermissions ?? []
+      ])
+    </div>
+  </div>
+@endsection

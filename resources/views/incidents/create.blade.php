@@ -88,7 +88,7 @@
                         <label class="mb-1 font-weight-semibold">Application <span class="text-danger">*</span></label>
                         <select id="application_id" name="application_id" class="form-control" required>
                             <option value="">— Sélectionner —</option>
-                            @foreach($applications as $app)
+                            @foreach($apps as $app)
                                 <option value="{{ $app->id }}" @selected(old('application_id')==$app->id)>
                                     {{ $app->nom }}
                                 </option>
@@ -116,7 +116,7 @@
                         <label class="mb-1 font-weight-semibold">Technicien assigné</label>
                         <select id="technicien_id" name="technicien_id" class="form-control">
                             <option value="">— Aucun —</option>
-                            @foreach($techniciens as $t)
+                            @foreach($techs as $t)
                                 <option value="{{ $t->id }}"
                                         data-service="{{ $t->service_id }}"
                                         @selected(old('technicien_id')==$t->id)>

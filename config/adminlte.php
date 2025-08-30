@@ -236,7 +236,7 @@ return [
     |
     */
 
-    'right_sidebar' => false,
+    'right_sidebar' => true,
     'right_sidebar_icon' => 'fas fa-cogs',
     'right_sidebar_theme' => 'dark',
     'right_sidebar_slide' => true,
@@ -263,7 +263,7 @@ return [
     'register_url' => 'register',
     'password_reset_url' => 'password/reset',
     'password_email_url' => 'password/email',
-    'profile_url' => false,
+    'profile_url' => true,
     'disable_darkmode_routes' => false,
 
     /*
@@ -346,7 +346,7 @@ return [
             [
                 'text'        => 'SLA imminent (<4h)',
                 'route'       => 'incidents.sla',
-                'icon'        => 'far fa-fw fa-hourglass-half',
+                'icon'        => 'fa fa-hourglass-half',
                 'label_color' => 'warning',
                 'key'         => 'incidents_sla_soon', // pour SlaBadgesCount
                 'can'         => 'reports.view', // admin/superviseur
@@ -362,7 +362,7 @@ return [
             [
                 'text'  => 'Galerie',
                 'route' => 'applications.gallery',
-                'icon'  => 'far fa-fw fa-images',
+                'icon'  => 'fa fa-images',
 
             ],
             [
@@ -441,7 +441,7 @@ return [
         'icon'        => 'fas fa-fw fa-bell',
         'label_color' => 'danger',
         'key'         => 'notifications', // pour UnreadNotificationsCount
-        'can'         => 'notifications.view',
+
     ],
 
     ['header' => 'ADMINISTRATION'],
@@ -465,7 +465,8 @@ return [
         'text'  => 'Rôles & Permissions',
         'route' => 'roles.index',
         'icon'  => 'fas fa-fw fa-user-shield',
-        'can'   => 'roles.view', // admin
+        'can'   => 'roles.manage', // admin
+
     ],
 
     // Paramètres

@@ -2,8 +2,8 @@
 
 namespace App\Policies;
 
-use App\Models\KbCategory;
 use App\Models\User;
+use App\Models\KbCategory;
 
 class KbCategoryPolicy
 {
@@ -12,7 +12,7 @@ class KbCategoryPolicy
         return $user->can('kb.view');
     }
 
-    public function view(User $user, KbCategory $kbCategory): bool
+    public function view(User $user, KbCategory $category): bool
     {
         return $user->can('kb.view');
     }
@@ -22,12 +22,22 @@ class KbCategoryPolicy
         return $user->can('kb.categories.manage');
     }
 
-    public function update(User $user, KbCategory $kbCategory): bool
+    public function update(User $user, KbCategory $category): bool
     {
         return $user->can('kb.categories.manage');
     }
 
-    public function delete(User $user, KbCategory $kbCategory): bool
+    public function delete(User $user, KbCategory $category): bool
+    {
+        return $user->can('kb.categories.manage');
+    }
+
+    public function restore(User $user, KbCategory $category): bool
+    {
+        return $user->can('kb.categories.manage');
+    }
+
+    public function forceDelete(User $user, KbCategory $category): bool
     {
         return $user->can('kb.categories.manage');
     }

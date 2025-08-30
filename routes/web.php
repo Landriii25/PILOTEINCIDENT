@@ -21,19 +21,9 @@ Route::get('/', fn () => redirect()->route('dashboard'));
 Route::middleware(['auth'])->group(function () {
 
     // --------------------- Dashboards ---------------------
-    Route::get('/dashboard', [DashboardController::class, 'redirect'])->name('dashboard');
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
-    Route::get('/dashboards/admin',        [DashboardController::class, 'admin'])
-        ->name('dashboard.admin')->middleware('role:admin');
 
-    Route::get('/dashboards/superviseur',  [DashboardController::class, 'superviseur'])
-        ->name('dashboard.superviseur')->middleware('role:superviseur');
-
-    Route::get('/dashboards/technicien',   [DashboardController::class, 'technicien'])
-        ->name('dashboard.technicien')->middleware('role:technicien');
-
-    Route::get('/dashboards/utilisateur',  [DashboardController::class, 'utilisateur'])
-        ->name('dashboard.utilisateur')->middleware('role:utilisateur');
 
     // --------------------- Profil -------------------------
     Route::get('/profile',  [ProfileController::class, 'edit'])->name('profile.edit');
@@ -60,15 +50,18 @@ Route::middleware(['auth'])->group(function () {
         ->name('applications.service_techniciens');
 
     // --------------------- Base de connaissances ----------
-    Route::resource('kb', KbArticleController::class);
-
-    // Catégories KB (CRUD simple)
+    // --------------------- Base de connaissances (CATEGORIES D’ABORD) ----------
     Route::get   ('kb/categories',                   [KbCategoryController::class, 'index'])->name('kb.categories');
     Route::get   ('kb/categories/create',            [KbCategoryController::class, 'create'])->name('kb.categories.create');
     Route::post  ('kb/categories',                   [KbCategoryController::class, 'store'])->name('kb.categories.store');
+    Route::get   ('kb/categories/{kbCategory}',      [KbCategoryController::class, 'show'])->name('kb.categories.show');
     Route::get   ('kb/categories/{kbCategory}/edit', [KbCategoryController::class, 'edit'])->name('kb.categories.edit');
     Route::put   ('kb/categories/{kbCategory}',      [KbCategoryController::class, 'update'])->name('kb.categories.update');
     Route::delete('kb/categories/{kbCategory}',      [KbCategoryController::class, 'destroy'])->name('kb.categories.destroy');
+
+    // Ensuite seulement, les articles
+    Route::resource('kb', KbArticleController::class);
+
 
     // --------------------- Rapports -----------------------
     Route::get('rapports/incidents-par-appli', [ReportController::class, 'byApp'])->name('reports.byapp');
@@ -97,7 +90,8 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('roles', RoleController::class)->only(['index','create','store','edit','update','destroy']);
 
     // --------------------- Paramètres ---------------------
-    Route::get('parametres', [SettingController::class, 'index'])->name('settings.index');
+    Route::get('settings', [SettingController::class, 'index'])->name('settings.index');
+    Route::post('settings', [SettingController::class, 'update'])->name('settings.update');
 
     // --------------------- Notifications ------------------
     Route::get ('/notifications',           [NotificationController::class, 'index'])->name('notifications.index');

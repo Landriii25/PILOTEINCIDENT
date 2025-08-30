@@ -64,7 +64,7 @@
             <div class="form-group col-md-4">
               <label for="application_id">Application <span class="text-danger">*</span></label>
               <select class="form-control" name="application_id" id="application_id" required>
-                @foreach($applications as $app)
+                @foreach($applications as $apps)
                   <option value="{{ $app->id }}"
                           data-service="{{ $app->service_id ?? '' }}"
                           @selected(old('application_id', $incident->application_id)==$app->id)>
