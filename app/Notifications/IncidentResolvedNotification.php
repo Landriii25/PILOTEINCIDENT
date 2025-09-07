@@ -38,6 +38,6 @@ class IncidentResolvedNotification extends Notification // implements ShouldQueu
             'titre'       => $this->incident->titre,
             'message'     => 'Incident résolu. Clôturez ou renvoyez au technicien.',
             'url'         => route('incidents.show', $this->incident),
-        ];
-    }
+        ];
+    }
 }

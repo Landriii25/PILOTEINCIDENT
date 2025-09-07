@@ -16,10 +16,13 @@
 
 @section('content')
     @php
-        $priorites  = $priorites  ?? ['Critique','Haute','Moyenne','Basse'];
-        $byPriority = $byPriority ?? [0,0,0,0];
-        $appLabels  = $appLabels  ?? [];
-        $appCounts  = $appCounts  ?? [];
+        // Valeurs par défaut pour éviter les erreurs si les variables sont vides
+        $priorites       = $priorites       ?? ['Critique','Haute','Moyenne','Basse'];
+        $byPriority      = $byPriority      ?? [0,0,0,0];
+        $appLabels       = $appLabels       ?? [];
+        $appCounts       = $appCounts       ?? [];
+        $avgPickupLabels = $avgPickupLabels ?? [];
+        $avgPickupData   = $avgPickupData   ?? [];
     @endphp
 
     {{-- KPI --}}
@@ -42,7 +45,7 @@
                     <p>SLA à risque</p>
                 </div>
                 <div class="icon"><i class="fas fa-stopwatch"></i></div>
-                <a href="{{ route('incidents.sla') }}" class="small-box-footer">Détails <i class="fas fa-arrow-circle-right"></i></a>
+                <a href="{{-- route('incidents.sla') --}}" class="small-box-footer">Détails <i class="fas fa-arrow-circle-right"></i></a>
             </div>
         </div>
 
@@ -90,9 +93,9 @@
         </div>
     </div>
 
-    {{-- Tendance 30 jours --}}
+    {{-- Tendance 30 jours et MTTA --}}
     <div class="row">
-        <div class="col-12">
+        <div class="col-md-8">
             <div class="card card-compact">
                 <div class="card-header py-2 d-flex align-items-center justify-content-between">
                     <h3 class="card-title mb-0">Tendance des incidents (30 jours)</h3>
@@ -106,38 +109,19 @@
                 </div>
             </div>
         </div>
-    </div>
-    <div class="row">
-    {{-- Bloc Temps moyen de prise en charge --}}
-    <div class="col-md-6">
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">Temps moyen de prise en charge (h) — 30j</h3>
-                </div>
-                <div class="card-body">
-                    <canvas id="chartAvgPickup" height="160"></canvas>
-                </div>
-            </div>
-        </div>
 
-        {{-- Bloc Utilisateurs --}}
-        <div class="col-md-6">
+        {{-- Bloc Temps moyen de prise en charge --}}
+        <div class="col-md-4">
             <div class="card card-compact">
                 <div class="card-header py-2">
-                    <h3 class="card-title mb-0">Utilisateurs</h3>
+                    <h3 class="card-title mb-0">Prise en charge (h) — 30j</h3>
                 </div>
-                <div class="card-body d-flex align-items-center">
-                    <i class="fas fa-users fa-2x mr-3 text-muted"></i>
-                    <div>
-                        <div class="h4 mb-0">{{ $usersCount ?? 0 }}</div>
-                        <small class="text-muted">Comptes enregistrés</small>
-                    </div>
-                    <a href="{{ route('users.index') }}" class="btn btn-link ml-auto">Gérer</a>
+                <div class="card-body">
+                    <canvas id="chartAvgPickup" class="chart-xs"></canvas>
                 </div>
             </div>
         </div>
     </div>
-
 @endsection
 
 @push('css')
@@ -151,142 +135,101 @@
     {{-- Chart.js CDN --}}
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-    {{-- Réglages globaux compacts (une fois suffit si déjà chargés ailleurs) --}}
+    {{-- Réglages globaux --}}
     <script>
     if (window.Chart) {
       Chart.defaults.font.size = 11;
       Chart.defaults.plugins.legend.display = true;
       Chart.defaults.plugins.legend.position = 'bottom';
       Chart.defaults.plugins.legend.labels.boxWidth = 12;
-      Chart.defaults.plugins.tooltip.enabled = true;
-      Chart.defaults.elements.point.radius = 2;
-      Chart.defaults.elements.point.hoverRadius = 3;
-      Chart.defaults.elements.line.tension = 0.25;
       Chart.defaults.maintainAspectRatio = false;
     }
     </script>
 
     <script>
-        const PRIORITY_LABELS = @json($priorites);
-        const PRIORITY_DATA   = @json($byPriority);
-        const APP_LABELS      = @json($appLabels);
-        const APP_DATA        = @json($appCounts);
-
-        // Doughnut : Incidents par priorité (compact)
+        // Graphe 1 : Doughnut Priorités
         new Chart(document.getElementById('chartPriority'), {
             type: 'doughnut',
             data: {
-                labels: PRIORITY_LABELS,
-                datasets: [{
-                    data: PRIORITY_DATA,
-                    backgroundColor: ['#dc3545','#fd7e14','#17a2b8','#6c757d'],
-                    borderWidth: 0
-                }]
+                labels: @json($priorites),
+                datasets: [{ data: @json($byPriority), backgroundColor: ['#dc3545','#fd7e14','#17a2b8','#6c757d'], borderWidth: 0 }]
             },
             options: { cutout: '60%' }
         });
 
-        // Barres horizontales : Top applications
+        // Graphe 2 : Barres Horizontales Applications
         new Chart(document.getElementById('chartApps'), {
             type: 'bar',
             data: {
-                labels: APP_LABELS,
+                labels: @json($appLabels),
                 datasets: [{
-                    label: 'Incidents',
-                    data: APP_DATA,
-                    backgroundColor: 'rgba(0,123,255,.75)',
-                    borderColor: '#007bff',
-                    borderWidth: 1,
-                    maxBarThickness: 20
+                    label: 'Incidents', data: @json($appCounts),
+                    backgroundColor: 'rgba(0,123,255,.75)', borderColor: '#007bff',
+                    borderWidth: 1, maxBarThickness: 20
                 }]
             },
             options: {
                 indexAxis: 'y',
-                scales: {
-                    x: { beginAtZero: true, ticks: { precision: 0 } },
-                    y: { ticks: { autoSkip: true, maxTicksLimit: 8 } }
-                },
+                scales: { x: { beginAtZero: true, ticks: { precision: 0 } } },
                 plugins: { legend: { display: false } }
             }
         });
-    </script>
 
-    <script>
-        // Tendance 30 jours (barres + toggle “Résolus”)
-        const TREND_LABELS   = @json($trendLabels ?? []);
-        const TREND_CREATED  = @json($trendCreated ?? []);
-        const TREND_RESOLVED = @json($trendResolved ?? []);
-
+        // Graphe 3 : Tendance 30 jours
         const trendChart = new Chart(document.getElementById('chartTrend'), {
             type: 'bar',
             data: {
-                labels: TREND_LABELS,
+                labels: @json($trendLabels ?? []),
                 datasets: [
-                    {
-                        label: 'Créés',
-                        data: TREND_CREATED,
-                        backgroundColor: 'rgba(23,162,184,.85)',
-                        borderColor: '#17a2b8',
-                        borderWidth: 1,
-                        maxBarThickness: 18
-                    },
-                    {
-                        label: 'Résolus',
-                        data: TREND_RESOLVED,
-                        backgroundColor: 'rgba(40,167,69,.8)',
-                        borderColor: '#28a745',
-                        borderWidth: 1,
-                        maxBarThickness: 18
-                    }
+                    { label: 'Créés', data: @json($trendCreated ?? []), backgroundColor: 'rgba(23,162,184,.85)' },
+                    { label: 'Résolus', data: @json($trendResolved ?? []), backgroundColor: 'rgba(40,167,69,.8)' }
                 ]
             },
             options: {
                 interaction: { mode: 'index', intersect: false },
-                scales: {
-                    x: { stacked: false, ticks: { maxTicksLimit: 10 } },
-                    y: { beginAtZero: true, ticks: { precision: 0 } }
-                }
+                scales: { x: { stacked: false }, y: { beginAtZero: true, ticks: { precision: 0 } } }
             }
         });
-
         document.getElementById('toggleResolved')?.addEventListener('change', function () {
             trendChart.data.datasets[1].hidden = !this.checked;
             trendChart.update();
         });
-    </script>
-    <script>
-    const AVG_TECH_LABELS = @json($avgTechLabels ?? []);
-    const AVG_TECH_HOURS  = @json($avgTechHours ?? []);
 
-    if (document.getElementById('chartAvgPickup')) {
-        const ctxAP = document.getElementById('chartAvgPickup').getContext('2d');
-        new Chart(ctxAP, {
-        type: 'bar',
-        data: {
-            labels: AVG_TECH_LABELS,
-            datasets: [{
-            label: 'Heures (moyenne)',
-            data: AVG_TECH_HOURS,
-            backgroundColor: '#6610f2', // violet
-            borderWidth: 1
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-            legend: { display: false },
-            tooltip: {
-                callbacks: {
-                label: (ctx) => ${ctx.parsed.y} h
+        // --- MODIFICATION CI-DESSOUS ---
+        // Graphe 4 : Temps moyen de prise en charge (MTTA)
+        const avgPickupCtx = document.getElementById('chartAvgPickup');
+        if (avgPickupCtx) {
+            new Chart(avgPickupCtx, {
+                type: 'bar',
+                data: {
+                    // On utilise les variables envoyées par le contrôleur
+                    labels: @json($avgPickupLabels),
+                    datasets: [{
+                        label: 'Heures (moyenne)',
+                        // On utilise les données envoyées par le contrôleur
+                        data: @json($avgPickupData),
+                        backgroundColor: '#6610f2',
+                        maxBarThickness: 25
+                    }]
+                },
+                options: {
+                    indexAxis: 'y', // Barres horizontales pour une meilleure lisibilité
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: (ctx) => `${ctx.parsed.x} heures` // Affiche "X heures" au survol
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            title: { display: true, text: 'Temps moyen en heures' }
+                        }
+                    }
                 }
-            }
-            },
-            scales: {
-            y: { beginAtZero: true }
-            }
+            });
         }
-        });
-    }
     </script>
-
 @endsection

@@ -28,7 +28,7 @@ class IncidentAssignedNotification extends Notification
             ->line('Merci d’intervenir avant l’échéance SLA.');
     }
 
-    public function toArray(object $notifiable): array
+    public function toDatabase(object $notifiable): array
     {
         return [
             'incident_id' => $this->incident->id,

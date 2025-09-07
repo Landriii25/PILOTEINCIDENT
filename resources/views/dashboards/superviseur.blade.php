@@ -15,8 +15,12 @@
 
 @section('content')
 @php
+    // Valeurs par défaut pour les variables
     $techLabels = $techLabels ?? [];
     $techCounts = $techCounts ?? [];
+    $avgPickupLabels = $avgPickupLabels ?? [];
+    $avgPickupData = $avgPickupData ?? [];
+    $slaList = $slaList ?? collect();
 @endphp
 
 {{-- KPI --}}
@@ -40,7 +44,7 @@
         <p>SLA à risque</p>
       </div>
       <div class="icon"><i class="fas fa-stopwatch"></i></div>
-      <a href="{{ route('incidents.sla') }}" class="small-box-footer">
+      <a href="{{-- route('incidents.sla') --}}" class="small-box-footer">
         Détails <i class="fas fa-arrow-circle-right"></i>
       </a>
     </div>
@@ -81,10 +85,10 @@
   <div class="col-md-6">
     <div class="card card-compact">
       <div class="card-header py-2">
-        <h3 class="card-title mb-0">Temps moyen de prise en charge (h) — 30j</h3>
+        <h3 class="card-title mb-0">Prise en charge (h) — 30j</h3>
       </div>
       <div class="card-body">
-        @if(!empty($avgTechLabels) && collect($avgTechLabels)->filter()->count() > 0)
+        @if(!empty($avgPickupLabels) && collect($avgPickupLabels)->filter()->count() > 0)
           <canvas id="chartAvgPickup" class="chart-xs"></canvas>
         @else
           <div class="text-muted small">Aucune donnée à afficher pour le moment.</div>
@@ -148,17 +152,15 @@
 
 @push('css')
 <style>
-    card.card-compact .card-body{ padding:.75rem 1rem; }
-    .chart-xs{ height:240px !important; }              /* Hauteur explicite des canvases */
-    .text-monospace{
-    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace;
-    }
-    .nowrap{ white-space: nowrap; }                    /* Pas de retour à la ligne */
-    .sla-table .col-code{ width:112px; }              /* Code compact & stable */
-    .sla-table .col-tech{ width:220px; }              /* Place pour nom complet */
-    .sla-table .col-due{ width:120px; }               /* Échéance */
-    .sla-table .col-actions{ width:90px; }            /* Deux icônes */
-    .table td, .table th{ vertical-align:middle;}
+   .card.card-compact .card-body{ padding:.75rem 1rem; }
+   .chart-xs{ height:240px !important; }
+   .text-monospace{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+   .nowrap{ white-space: nowrap; }
+   .sla-table .col-code{ width:112px; }
+   .sla-table .col-tech{ width:220px; }
+   .sla-table .col-due{ width:120px; }
+   .sla-table .col-actions{ width:90px; }
+   .table td, .table th{ vertical-align:middle;}
 </style>
 @endpush
 
@@ -173,8 +175,8 @@
 
   // Incidents par technicien
   (function(){
-    const labels = @json($techLabels ?? []);
-    const data   = @json($techCounts ?? []);
+    const labels = @json($techLabels);
+    const data   = @json($techCounts);
     const el = document.getElementById('chartByTech');
     if (!el || !labels.length) return;
 
@@ -183,12 +185,9 @@
       data: {
         labels,
         datasets: [{
-          label: 'Incidents ouverts',
-          data,
-          backgroundColor: 'rgba(0,123,255,.75)',
-          borderColor: '#007bff',
-          borderWidth: 1,
-          maxBarThickness: 20
+          label: 'Incidents ouverts', data,
+          backgroundColor: 'rgba(0,123,255,.75)', borderColor: '#007bff',
+          borderWidth: 1, maxBarThickness: 20
         }]
       },
       options: {
@@ -201,10 +200,13 @@
     });
   })();
 
+  // --- MODIFICATION CI-DESSOUS ---
   // Temps moyen de prise en charge
   (function(){
-    const labels = @json($avgTechLabels ?? []);
-    const data   = @json($avgTechHours ?? []);
+    // CORRECTION : La variable envoyée par le contrôleur est $avgPickupLabels
+    const labels = @json($avgPickupLabels);
+    // CORRECTION : La variable envoyée par le contrôleur est $avgPickupData
+    const data   = @json($avgPickupData);
     const el = document.getElementById('chartAvgPickup');
     if (!el || !labels.length) return;
 
@@ -213,18 +215,27 @@
       data: {
         labels,
         datasets: [{
-          label: 'Heures (moyenne)',
-          data,
-          backgroundColor: '#6610f2',
-          borderWidth: 1
+          label: 'Heures (moyenne)', data,
+          backgroundColor: '#6610f2', borderWidth: 1
         }]
       },
+      // AMÉLIORATION : Barres horizontales pour une meilleure lisibilité
       options: {
+        indexAxis: 'y',
         plugins: {
           legend: { display: false },
-          tooltip: { callbacks: { label: (ctx) => ${ctx.parsed.y} h } }
+          tooltip: {
+            callbacks: {
+              label: (ctx) => `${ctx.parsed.x} heures` // Affiche "X heures" au survol
+            }
+          }
         },
-        scales: { y: { beginAtZero: true } }
+        scales: {
+            x: {
+                beginAtZero: true,
+                title: { display: true, text: 'Temps moyen en heures' }
+            }
+        }
       }
     });
   })();

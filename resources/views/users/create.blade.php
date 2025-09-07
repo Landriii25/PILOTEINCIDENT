@@ -65,11 +65,14 @@
                     @error('service_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
                 </div>
 
-                {{-- Rôle --}}
+              {{-- Rôle --}}
                 <div class="form-group">
                     <label>Rôle <span class="text-danger">*</span></label>
                     <select name="role_id" required class="form-control @error('role_id') is-invalid @enderror">
-                        <option value="">— Sélectionner —</option>
+
+                        {{-- L'option par défaut est maintenant non sélectionnable --}}
+                        <option value="" disabled selected>— Sélectionner un rôle —</option>
+
                         @foreach($roles as $role)
                             <option value="{{ $role->id }}" @selected(old('role_id') == $role->id)>
                                 {{ $role->name }}

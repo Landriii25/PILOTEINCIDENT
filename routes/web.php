@@ -36,11 +36,12 @@ Route::middleware(['auth'])->group(function () {
     Route::get('incidents-sla', [IncidentController::class, 'slaAtRisk'])->name('incidents.sla');
 
     Route::post('incidents/{incident}/commenter', [IncidentController::class, 'commenter'])->name('incidents.commenter');
-    Route::post('incidents/{incident}/comments',  [IncidentController::class, 'addComment'])->name('incidents.comments.store');
+    Route::post('incidents/{incident}/comments', [IncidentController::class, 'commenter'])->name('incidents.comments.store');
 
     Route::put('incidents/{incident}/resolve',        [IncidentController::class, 'resolve'])->name('incidents.resolve');
     Route::put('incidents/{incident}/close',          [IncidentController::class, 'close'])->name('incidents.close');
     Route::put('incidents/{incident}/reopen-to-tech', [IncidentController::class, 'reopenToSameTech'])->name('incidents.reopen_to_tech');
+    Route::get('/incidents/export',                   [IncidentController::class, 'export'])->name('incidents.export')->middleware('auth');
 
     // --------------------- Applications -------------------
     Route::get('applications/galerie', [ApplicationController::class, 'gallery'])->name('applications.gallery');
@@ -102,6 +103,7 @@ Route::middleware(['auth'])->group(function () {
     // --------------------- Services -----------------------
     Route::resource('services', ServiceController::class);
     Route::get('services/{service}/techniciens', [ServiceController::class, 'technicians'])->name('services.technicians');
+    Route::get('/services/by-application/{application}', [ServiceController::class, 'getByApplication'])->name('services.by_application');
 });
 
 // Auth (Breeze)

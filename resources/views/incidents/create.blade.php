@@ -47,7 +47,8 @@
 
     <div class="card shadow-sm" style="border-radius:14px; overflow:hidden;">
         <div class="card-body">
-            <form action="{{ route('incidents.store') }}" method="POST">
+            {{-- MODIFICATION 1 : Ajout de enctype="multipart/form-data" pour permettre l'envoi de fichiers --}}
+            <form action="{{ route('incidents.store') }}" method="POST" enctype="multipart/form-data">
                 @csrf
 
                 {{-- Ligne 1 : Titre + Priorité --}}
@@ -81,6 +82,20 @@
                               placeholder="Détails, étapes pour reproduire, messages d’erreur, captures, etc.">{{ old('description') }}</textarea>
                     @error('description') <small class="text-danger">{{ $message }}</small> @enderror
                 </div>
+
+                {{-- MODIFICATION 2 : Ajout du champ pour les pièces jointes --}}
+                <div class="form-group">
+                    <label class="mb-1 font-weight-semibold">Pièces jointes (optionnel)</label>
+                    <div class="custom-file">
+                        <input type="file" name="attachments[]" id="attachments" class="custom-file-input" multiple>
+                        <label class="custom-file-label" for="attachments" data-browse="Parcourir">Choisir des fichiers...</label>
+                    </div>
+                    <small class="form-text text-muted">
+                        Vous pouvez joindre plusieurs fichiers (max 5). Formats : JPG, PDF, DOCX, etc.
+                    </small>
+                    @error('attachments.*') <small class="text-danger">{{ $message }}</small> @enderror
+                </div>
+
 
                 {{-- Ligne 2 : Application / Service (auto) / Technicien (filtré) --}}
                 <div class="form-row">
@@ -155,50 +170,75 @@
 @endpush
 
 @section('js')
-<script>
-    // Map JS: { appId: {id: service_id, nom: service_nom}, ... }
-    const APP_SERVICES = @json($mapAppServices ?? []);
-    const $appSelect   = document.getElementById('application_id');
-    const $svcName     = document.getElementById('service_name');
-    const $svcId       = document.getElementById('service_id');
-    const $techSelect  = document.getElementById('technicien_id');
+    {{-- On garde votre script existant pour les listes déroulantes dépendantes --}}
+    <script>
+        // La carte est maintenant correctement remplie par le contrôleur
+        const APP_SERVICES = @json($mapAppServices ?? []);
+        const appSelect = document.getElementById('application_id');
+        const svcNameInput = document.getElementById('service_name');
+        const svcIdInput = document.getElementById('service_id');
+        const techSelect = document.getElementById('technicien_id');
 
-    function refreshServiceAndTech() {
-        const appId = $appSelect.value;
-        const svc   = APP_SERVICES[appId] || null;
+        function refreshServiceAndTech() {
+            const appId = appSelect.value;
+            const service = APP_SERVICES[appId] || null;
 
-        // Remplir le service (lecture seule)
-        if (svc && svc.id) {
-            $svcName.value = svc.nom || '';
-            $svcId.value   = svc.id;
-        } else {
-            $svcName.value = '';
-            $svcId.value   = '';
+            // Mettre à jour les champs du service
+            if (service && service.id) {
+                svcNameInput.value = service.nom || '';
+                svcIdInput.value = service.id;
+            } else {
+                svcNameInput.value = '';
+                svcIdInput.value = '';
+            }
+
+            // Filtrer la liste des techniciens
+            const serviceId = service ? String(service.id) : null;
+            const oldTechnicien = "{{ old('technicien_id') }}";
+            let isOldTechnicienVisible = false;
+
+            techSelect.querySelectorAll('option').forEach(option => {
+                if (!option.value) return; // On garde toujours l'option "— Aucun —"
+                const technicienServiceId = option.getAttribute('data-service');
+                const shouldBeVisible = !serviceId || (technicienServiceId === serviceId);
+
+                option.style.display = shouldBeVisible ? '' : 'none';
+
+                if (!shouldBeVisible && option.selected) {
+                    techSelect.value = '';
+                }
+
+                if (option.value === oldTechnicien && shouldBeVisible) {
+                    isOldTechnicienVisible = true;
+                }
+            });
+
+            if (isOldTechnicienVisible) {
+                techSelect.value = oldTechnicien;
+            }
         }
 
-        // Filtrer les techniciens par service_id (si présent)
-        const selectedTech = "{{ old('technicien_id') }}";
-        const options = $techSelect.querySelectorAll('option');
+        appSelect.addEventListener('change', refreshServiceAndTech);
+        document.addEventListener('DOMContentLoaded', refreshServiceAndTech);
+    </script>
 
-        options.forEach(opt => {
-            if (!opt.value) return; // garder "— Aucun —"
-            const techSvc = opt.getAttribute('data-service');
-            const visible = (!svc || !svc.id) ? true : (String(techSvc) === String(svc.id));
-            opt.style.display = visible ? '' : 'none';
-            if (!visible && opt.selected) {
-                $techSelect.value = '';
+    {{-- MODIFICATION 3 (BONUS UX) : Script pour afficher le nom des fichiers sélectionnés --}}
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const fileInput = document.getElementById('attachments');
+            if (fileInput) {
+                fileInput.addEventListener('change', function (e) {
+                    const label = this.nextElementSibling;
+                    const files = e.target.files;
+                    if (files.length > 1) {
+                        label.innerText = `${files.length} fichiers sélectionnés`;
+                    } else if (files.length === 1) {
+                        label.innerText = files[0].name;
+                    } else {
+                        label.innerText = 'Choisir des fichiers...';
+                    }
+                });
             }
         });
-
-        if (selectedTech) {
-            const candidate = $techSelect.querySelector(option[value="${selectedTech}"]);
-            if (candidate && candidate.style.display !== 'none') {
-                $techSelect.value = selectedTech;
-            }
-        }
-    }
-
-    $appSelect.addEventListener('change', refreshServiceAndTech);
-    document.addEventListener('DOMContentLoaded', refreshServiceAndTech);
-</script>
+    </script>
 @endsection

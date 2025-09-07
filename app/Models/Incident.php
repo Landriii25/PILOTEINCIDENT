@@ -110,6 +110,11 @@ class Incident extends Model
         return $this->hasOne(\App\Models\Report::class, 'incident_id');
     }
 
+    public function attachments()
+    {
+        return $this->hasMany(\App\Models\Attachment::class);
+    }
+
     /* ====================== Scopes ====================== */
     public function scopeOpen($q)
     {

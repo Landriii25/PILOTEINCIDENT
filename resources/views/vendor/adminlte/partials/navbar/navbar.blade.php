@@ -77,6 +77,15 @@
 @media (max-width: 420px){
   .user-dropdown{ width:92vw; }
 }
+
+/* --- AJOUT : Correction pour le texte long des notifications --- */
+.navbar .dropdown-menu .dropdown-item {
+    white-space: normal;      /* Permet au texte de revenir à la ligne */
+    overflow-wrap: break-word;  /* Force la coupe des mots très longs */
+}
+.navbar .dropdown-menu .dropdown-item .float-right {
+    margin-left: 10px; /* Ajoute un petit espace pour que le temps ne colle pas au texte */
+}
 </style>
 
 
@@ -86,41 +95,17 @@
 
     {{-- Gauche --}}
     <ul class="navbar-nav">
-        {{-- Bouton burger (sidebar) --}}
         @include('adminlte::partials.navbar.menu-item-left-sidebar-toggler')
-
-        {{-- Liens configurés côté gauche --}}
         @each('adminlte::partials.navbar.menu-item', $adminlte->menu('navbar-left'), 'item')
-
-        {{-- Hooks custom --}}
         @yield('content_top_nav_left')
     </ul>
 
     {{-- Droite --}}
     <ul class="navbar-nav ml-auto">
-        {{-- Hooks custom --}}
         @yield('content_top_nav_right')
-
-        {{-- Liens configurés côté droit (search, fullscreen, etc.) --}}
         @each('adminlte::partials.navbar.menu-item', $adminlte->menu('navbar-right'), 'item')
 
-        {{-- NOTIFICATIONS --------------------------------------------------- --}}
-        @php
-            $user = auth()->user();
-            $unread = collect();
-            $unreadCount = 0;
-
-            if ($user) {
-                try {
-                    $unread = $user->unreadNotifications()->latest()->limit(10)->get();
-                    $unreadCount = $user->unreadNotifications()->count();
-                } catch (\Throwable $e) {
-                    $unread = collect();
-                    $unreadCount = 0;
-                }
-            }
-        @endphp
-
+        {{-- NOTIFICATIONS --}}
         @if($user)
         <li class="nav-item dropdown">
             <a class="nav-link" data-toggle="dropdown" href="#" aria-expanded="false" title="Notifications">
@@ -131,23 +116,24 @@
             </a>
             <div class="dropdown-menu dropdown-menu-lg dropdown-menu-right p-0">
                 <span class="dropdown-item dropdown-header">
-                    {{ $unreadCount }} notification(s)
+                    {{ $unreadCount }} notification(s) non lue(s)
                 </span>
                 <div class="dropdown-divider"></div>
 
                 @forelse($unread as $n)
                     <a href="{{ route('notifications.go', $n->id) }}" class="dropdown-item">
                         <i class="fas fa-info-circle mr-2 text-primary"></i>
+                        {{-- Ce texte va maintenant revenir à la ligne correctement --}}
                         {{ data_get($n->data, 'title') ?? data_get($n->data,'message','Notification') }}
                         <span class="float-right text-muted text-sm">{{ optional($n->created_at)->diffForHumans() }}</span>
                     </a>
                     <div class="dropdown-divider"></div>
                 @empty
-                    <span class="dropdown-item text-muted">Aucune notification</span>
+                    <span class="dropdown-item text-muted">Aucune nouvelle notification</span>
                     <div class="dropdown-divider"></div>
                 @endforelse
 
-                <form action="{{ route('notifications.readAll') }}" method="POST" class="px-2 pb-2">
+                <form action="{{-- route('notifications.readAll') --}}" method="POST" class="px-2 pb-2">
                     @csrf
                     <button class="btn btn-sm btn-outline-secondary btn-block">Tout marquer comme lu</button>
                 </form>
@@ -155,38 +141,35 @@
         </li>
         @endif
 
-        {{-- USER MENU ------------------------------------------------------- --}}
-        @if($user)
+        {{-- USER MENU --}}
+        @if(Auth::user())
             @php
-                $roleName  = optional($user->roles->first())->name ?? 'utilisateur';
+                $user = Auth::user();
+                $userTitle = $user->title;
+                $roleName = optional($user->roles->first())->name ?? 'utilisateur';
                 $roleLabel = [
                     'admin'       => 'Administrateur',
                     'superviseur' => 'Superviseur',
                     'technicien'  => 'Technicien',
                     'utilisateur' => 'Utilisateur',
                 ][$roleName] ?? ucfirst($roleName);
+                $displayInfo = $userTitle ?? $roleLabel;
             @endphp
-
             <li class="nav-item dropdown user-menu">
                 <a href="#" class="nav-link dropdown-toggle d-flex align-items-center" data-toggle="dropdown">
                     <x-avatar :name="$user->name" :url="$user->avatar_url" size="32" class="mr-2"/>
                     <span class="d-none d-md-inline font-weight-bold">{{ $user->name }}</span>
                 </a>
-
                 <ul class="dropdown-menu dropdown-menu-lg dropdown-menu-right user-dropdown">
-                    {{-- En-tête --}}
                     <li class="user-header">
                         <x-avatar :name="$user->name" :url="$user->avatar_url" size="72" class="mb-2 shadow" />
                         <p class="mb-1 font-weight-bold">{{ $user->name }}</p>
-                        <span class="role-pill">{{ $roleLabel }}</span>
+                        <span class="role-pill">{{ $displayInfo }}</span>
                     </li>
-
-                    {{-- Pied : actions --}}
                     <li class="user-footer">
                         <a href="{{ route('profile.edit') }}" class="btn btn-soft">
                             <i class="fas fa-user mr-2"></i> Profil
                         </a>
-
                         <form action="{{ route('logout') }}" method="POST" class="m-0">
                             @csrf
                             <button type="submit" class="btn btn-logout">
@@ -197,6 +180,5 @@
                 </ul>
             </li>
         @endif
-
     </ul>
 </nav>

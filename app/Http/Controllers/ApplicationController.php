@@ -128,16 +128,20 @@ class ApplicationController extends Controller
         ]);
     }
 
-    public function serviceTechniciens(Application $application)
+    public function getByApplication(Application $application)
     {
-        $service = $application->service()->select('id','nom')->first();
-        $techs   = $service
-            ? $service->techniciens()->select('id','name')->orderBy('name')->get()
-            : collect();
+        // Charger le service associé à l'application
+        $service = $application->service;
 
-        return response()->json([
-            'service'     => $service,
-            'techniciens' => $techs,
-        ]);
+        if ($service) {
+            // On retourne une réponse JSON avec l'ID et le nom du service
+            return response()->json([
+                'id' => $service->id,
+                'nom' => $service->nom
+            ]);
+        }
+
+        // Si aucun service n'est trouvé, on retourne une réponse vide avec une erreur 404
+        return response()->json(null, 404);
     }
 }

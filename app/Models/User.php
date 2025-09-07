@@ -10,6 +10,7 @@ use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Activitylog\LogOptions;
 use Laravel\Sanctum\HasApiTokens;
 
+
 class User extends Authenticatable
 {
     use HasFactory, Notifiable, HasRoles, LogsActivity, HasApiTokens;
@@ -19,6 +20,7 @@ class User extends Authenticatable
         'title',
         'email',
         'password',
+        'service_id',
     ];
 
     protected $hidden = [

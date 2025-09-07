@@ -10,6 +10,7 @@
                 <i class="fas fa-plus-circle mr-1"></i> Créer un incident
             </a>
         @endcan
+
     </div>
 @endsection
 
@@ -83,13 +84,23 @@
                 </div>
 
                 {{-- Boutons --}}
-                <div class="form-group col-md-3 ml-auto d-flex gap-2 justify-content-end">
+                <div class="form-group col-md-3 ml-auto d-flex justify-content-end align-items-center">
+
+                    {{-- Le mr-2 ajoute un espace à droite de ce bouton --}}
                     <a href="{{ route('incidents.index') }}" class="btn btn-light border mr-2">
                         <i class="fas fa-undo mr-1"></i> Réinitialiser
                     </a>
-                    <button class="btn btn-primary">
+
+                    {{-- On ajoute aussi un mr-2 ici --}}
+                    <button class="btn btn-primary mr-2">
                         <i class="fas fa-filter mr-1"></i> Filtrer
                     </button>
+
+                    {{-- Le dernier bouton n'a pas besoin de marge à droite --}}
+                    <a href="{{ route('incidents.export') }}" class="btn btn-success">
+                        <i class="fas fa-file-excel mr-1"></i> Exporter
+                    </a>
+
                 </div>
             </form>
         </div>
