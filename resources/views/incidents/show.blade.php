@@ -90,9 +90,9 @@
                     <ul class="list-unstyled mt-2">
                         @foreach($incident->attachments as $attachment)
                             <li>
-                                <a href="{{ Storage::url($attachment->file_path ?? $attachment->chemin_fichier) }}" target="_blank">
+                                <a href="{{ Storage::url($attachment->chemin_fichier) }}" target="_blank">
                                     <i class="fas fa-paperclip mr-1"></i>
-                                    {{ $attachment->original_name ?? $attachment->nom_original }}
+                                    {{ $attachment->nom_original }}
                                 </a>
                             </li>
                         @endforeach
@@ -128,8 +128,8 @@
                 @endforelse
             </div>
             <div class="card-footer">
-                {{-- LE FORMULAIRE CORRECT EST ICI --}}
-                <form method="POST" action="{{ route('incidents.comments.store', $incident) }}">
+                {{-- FORMULAIRE FINAL AVEC LA CORRECTION onsubmit --}}
+                <form method="POST" action="{{ route('incidents.comments.store', $incident) }}" onsubmit="console.log('Événement de soumission du formulaire DÉCLENCHÉ !'); return true;">
                     @csrf
                     <div class="form-group mb-0">
                         <textarea name="commentaire"

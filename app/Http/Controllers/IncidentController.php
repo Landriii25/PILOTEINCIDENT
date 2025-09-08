@@ -26,7 +26,22 @@ class IncidentController extends Controller
     public function index(Request $request)
     {
         $q = Incident::query()->with(['application:id,nom', 'technicien:id,name', 'user:id,name']);
+        $user = auth()->user();
 
+        // --- LOGIQUE MÉTIER AJOUTÉE CI-DESSOUS ---
+        // Si l'utilisateur est un superviseur OU un technicien, on restreint la vue à son service.
+        // L'admin, lui, n'est pas affecté par ce filtre et voit tout.
+        if ($user->hasRole('superviseur') || $user->hasRole('technicien')) {
+            if ($user->service_id) {
+                $q->where('service_id', $user->service_id);
+            } else {
+                // Si un superviseur/technicien n'a pas de service, il ne voit aucun incident.
+                $q->whereRaw('1 = 0'); // Condition qui ne retourne jamais rien
+            }
+        }
+        // --- FIN DE LA LOGIQUE MÉTIER ---
+
+        // Le reste de vos filtres
         if ($request->filled('q')) {
             $term = trim($request->q);
             $q->where(function ($qq) use ($term) {
@@ -44,12 +59,20 @@ class IncidentController extends Controller
 
         $incidents = $q->orderByDesc('created_at')->paginate(10)->withQueryString();
 
+        // Les données pour les listes déroulantes des filtres
         $priorites    = Incident::PRIORITES;
         $statuts      = ['Ouvert', 'En cours', 'Résolu', 'Fermé'];
         $applications = Application::orderBy('nom')->get(['id', 'nom']);
         $techniciens  = User::role('technicien')->orderBy('name')->get(['id', 'name']);
 
         return view('incidents.index', compact('incidents', 'priorites', 'statuts', 'applications', 'techniciens'));
+    }
+
+    public function mine()
+    {
+        // On redirige simplement vers la page de liste principale
+        // en ajoutant le paramètre "mine=1" à l'URL.
+        return redirect()->route('incidents.index', ['mine' => 1]);
     }
 
     public function create()
@@ -123,14 +146,29 @@ class IncidentController extends Controller
 
     public function edit(Incident $incident)
     {
+        // Votre vérification d'autorisation est conservée
         if (!auth()->user()->hasRole('admin') && $incident->user_id !== auth()->id() && $incident->technicien_id !== auth()->id()) {
             abort(403);
         }
 
-        $apps = Application::orderBy('nom')->get(['id', 'nom']);
-        $techs = User::role('technicien')->orderBy('name')->get(['id', 'name']);
+        // MODIFICATION 1 : On s'assure de récupérer les données nécessaires pour le JS
+        $apps = Application::with('service:id,nom')->orderBy('nom')->get(['id', 'nom']);
+        $techs = User::role('technicien')->orderBy('name')->get(['id', 'name', 'service_id']);
 
-        return view('incidents.edit', compact('incident', 'apps', 'techs'));
+        // AJOUT : On crée la carte [id_application => service] pour le JavaScript
+        $mapAppServices = $apps
+            ->filter(fn($app) => $app->service)
+            ->mapWithKeys(function ($app) {
+                return [
+                    $app->id => [
+                        'id' => $app->service->id,
+                        'nom' => $app->service->nom
+                    ]
+                ];
+            });
+
+        // MODIFICATION 2 : On passe la nouvelle variable à la vue
+        return view('incidents.edit', compact('incident', 'apps', 'techs', 'mapAppServices'));
     }
 
     public function update(Request $request, Incident $incident)

@@ -96,7 +96,7 @@ Route::middleware(['auth'])->group(function () {
 
     // --------------------- Notifications ------------------
     Route::get ('/notifications',           [NotificationController::class, 'index'])->name('notifications.index');
-    Route::post('/notifications/read-all',  [NotificationController::class, 'markAllRead'])->name('notifications.readAll');
+    Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead'])->name('notifications.readAll');
     Route::post('/notifications/{id}/read', [NotificationController::class, 'markRead'])->name('notifications.read');
     Route::get ('/notifications/go/{id}',   [NotificationController::class, 'go'])->name('notifications.go');
 

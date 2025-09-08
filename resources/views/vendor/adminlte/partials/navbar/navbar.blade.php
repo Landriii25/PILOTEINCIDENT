@@ -78,13 +78,13 @@
   .user-dropdown{ width:92vw; }
 }
 
-/* --- AJOUT : Correction pour le texte long des notifications --- */
+/* Correction pour le texte long des notifications */
 .navbar .dropdown-menu .dropdown-item {
-    white-space: normal;      /* Permet au texte de revenir à la ligne */
-    overflow-wrap: break-word;  /* Force la coupe des mots très longs */
+    white-space: normal;
+    overflow-wrap: break-word;
 }
 .navbar .dropdown-menu .dropdown-item .float-right {
-    margin-left: 10px; /* Ajoute un petit espace pour que le temps ne colle pas au texte */
+    margin-left: 10px;
 }
 </style>
 
@@ -123,7 +123,6 @@
                 @forelse($unread as $n)
                     <a href="{{ route('notifications.go', $n->id) }}" class="dropdown-item">
                         <i class="fas fa-info-circle mr-2 text-primary"></i>
-                        {{-- Ce texte va maintenant revenir à la ligne correctement --}}
                         {{ data_get($n->data, 'title') ?? data_get($n->data,'message','Notification') }}
                         <span class="float-right text-muted text-sm">{{ optional($n->created_at)->diffForHumans() }}</span>
                     </a>
@@ -133,9 +132,9 @@
                     <div class="dropdown-divider"></div>
                 @endforelse
 
-                <form action="{{-- route('notifications.readAll') --}}" method="POST" class="px-2 pb-2">
+                <form action="{{ route('notifications.readAll') }}" method="POST" class="px-2 pb-2">
                     @csrf
-                    <button class="btn btn-sm btn-outline-secondary btn-block">Tout marquer comme lu</button>
+                    <button type="submit" class="btn btn-sm btn-outline-secondary btn-block">Tout marquer comme lu</button>
                 </form>
             </div>
         </li>
